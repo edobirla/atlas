@@ -293,10 +293,10 @@
     if (!ss || !ss.live) { setTimeout(function () { A.go('train'); }, 0); return ''; }
     var h = '<div class="hd" style="padding-bottom:6px"><div><h1 style="font-size:24px">' + esc(ss.name) + '</h1>' +
       '<div class="sub"><span id="sess-time" class="num">0:00</span> · <span id="sess-vol">0 kg</span> · <span id="sess-sets">0 serie</span></div></div>' +
-      '<button class="iconbtn" onclick="Views.finishWorkout()" style="width:auto;padding:0 14px;background:var(--grad);border:0;font-weight:800;font-size:13px">Fine</button></div>';
+      '<button class="iconbtn" onclick="Views.cancelWorkout()" style="width:auto;padding:0 14px;color:var(--txt-3)">Annulla</button></div>';
     h += '<div id="exlist">' + ss.ex.map(exCard).join('') + '</div>';
     h += '<button class="btn wide mt" onclick="Views.addExercise()">+ Aggiungi esercizio</button>';
-    h += '<button class="btn wide mt" style="color:var(--txt-3)" onclick="Views.cancelWorkout()">Annulla allenamento</button>';
+    h += '<button class="btn pri wide mt" onclick="Views.finishWorkout()">Fine allenamento</button>';
     h += '<div style="height:80px"></div>';
     return h;
   };
@@ -339,9 +339,10 @@
     h += ee.sets.map(function (st, si) { return setRow(idx, si, st); }).join('');
     h += '<div class="row wrap mt" style="gap:8px"><button class="btn xs" onclick="Views.addSet(' + idx + ',0)">+ Serie</button>' +
       '<button class="btn xs" onclick="Views.addSet(' + idx + ',1)">+ Risc.</button>' +
-      '<button class="btn xs" onclick="Views.removeSet(' + idx + ')">− Serie</button>' +
+      '<button class="btn xs" onclick="Views.removeSet(' + idx + ',0)">− Serie</button>' +
+      (ee.sets.some(function (s) { return s.warm; }) ? '<button class="btn xs" onclick="Views.removeSet(' + idx + ',1)">− Risc.</button>' : '') +
       '<button class="btn xs" onclick="Views.exMenu(' + idx + ')">⏱ ' + Math.round(((t.rest && t.rest[0]) || 90) / 15) * 15 + 's</button>' +
-      '<button class="btn xs" onclick="Views.plateCalc(' + idx + ')">⚙︎ Dischi</button></div>';
+      (e && ['bilanciere', 'ez', 'smith'].indexOf(e.eq) !== -1 ? '<button class="btn xs" onclick="Views.plateCalc(' + idx + ')">⚙︎ Dischi</button>' : '') + '</div>';
     if (ee.note) h += '<div class="t-xs dim mt">📝 ' + esc(ee.note) + '</div>';
     return h + '</div>';
   }
@@ -448,9 +449,12 @@
     S().session.ex[ei].sets = sets.filter(function (x) { return !x.warm; });
     Store.save(); refreshEx(ei); A.toast('Riscaldamento rimosso');
   };
-  g.Views.removeSet = function (ei) {
+  g.Views.removeSet = function (ei, warm) {
     var sets = S().session.ex[ei].sets;
-    if (sets.length > 1) sets.pop();
+    if (sets.length <= 1) return;
+    for (var i = sets.length - 1; i >= 0; i--) {
+      if (sets[i].warm === !!warm) { sets.splice(i, 1); break; }
+    }
     Store.save(); refreshEx(ei);
   };
   g.Views.exMenu = function (ei) {

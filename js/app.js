@@ -51,6 +51,23 @@
     };
     scrim.onclick = close; sheetStack.push(close);
     el.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) close(); });
+
+    var startY = null, dy = 0;
+    el.addEventListener('touchstart', function (e) {
+      if (el.scrollTop > 0) { startY = null; return; }
+      startY = e.touches[0].clientY; dy = 0; el.style.transition = 'none';
+    }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (startY == null) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy > 0) el.style.transform = 'translateY(' + dy + 'px)';
+    }, { passive: true });
+    el.addEventListener('touchend', function () {
+      if (startY == null) return;
+      el.style.transition = 'transform .26s cubic-bezier(.4,0,1,1)';
+      if (dy > 90) close(); else el.style.transform = 'none';
+      startY = null; dy = 0;
+    });
     return { el: el, close: close };
   }
   function closeSheet() { if (sheetStack.length) sheetStack[sheetStack.length - 1](); }
